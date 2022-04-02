@@ -212,29 +212,34 @@ public class MainActivityData implements SolidBaseData {
 ##### 1.事件注册与调用
 
 //事件发送端
+
 @SolidData(bindId = Config.BIND_ID_LIST_VIEW)
 void getListViewData(SolidCallback callback){
 		callback.onDataGet(data);
 }
 
 //事件接收端
+
 @SolidView(bindId = Config.BIND_ID_LIST_VIEW)
 void showList(Object data,String msg){
 
 }
 
 //调用事件的方法
+
 Solid.getInstance().call(Config.BIND_ID_LIST_VIEW, Solid.CallType.CALL_TYPE_DATA_TO_VIEW);
 
 ##### 2.任意位置获取provider提供的数据
 
 //定义provider
+
 @SolidDataProvider(id=Config.PROVIDER_ID_LIST_VIEW_DATA)
 List<String> testListData(){
 		return testItems;
 }
 
 //调用方法获取数据
+	
 Solid.getInstance().queryProviderData(solidId(),Config.PROVIDER_ID_LIST_VIEW_DATA);
 	
 #### 5.更多使用，还在开发中
