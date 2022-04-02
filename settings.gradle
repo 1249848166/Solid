@@ -1,0 +1,3 @@
+rootProject.name = "SolidExample"
+include ':app'
+include ':solid'
