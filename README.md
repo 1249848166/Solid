@@ -214,14 +214,19 @@ public class MainActivityData implements SolidBaseData {
 //事件发送端
 
 @SolidData(bindId = Config.BIND_ID_LIST_VIEW)
+
 void getListViewData(SolidCallback callback){
+
 		callback.onDataGet(data);
+		
 }
 
 //事件接收端
 
 @SolidView(bindId = Config.BIND_ID_LIST_VIEW)
+
 void showList(Object data,String msg){
+
 
 }
 
@@ -234,8 +239,11 @@ Solid.getInstance().call(Config.BIND_ID_LIST_VIEW, Solid.CallType.CALL_TYPE_DATA
 //定义provider
 
 @SolidDataProvider(id=Config.PROVIDER_ID_LIST_VIEW_DATA)
+
 List<String> testListData(){
+	
 		return testItems;
+	
 }
 
 //调用方法获取数据
