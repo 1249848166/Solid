@@ -43,7 +43,7 @@ public class ListDataManager implements SolidBaseData {
         Log.e("size",listSolidItemList.size()+"");
         listSolidItemList.remove((int)data);
         Log.e("size",listSolidItemList.size()+"");
-        Solid.getInstance().call(Config.BIND_ID_REFRESH, Solid.CallType.CALL_TYPE_DATA_TO_VIEW);
+        Solid.getInstance().call(solidId(),Config.BIND_ID_REFRESH, Solid.CallType.CALL_TYPE_DATA_TO_VIEW);
     }
 
     @SolidData(bindId = Config.BIND_ID_REFRESH)

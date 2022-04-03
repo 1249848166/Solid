@@ -31,7 +31,8 @@ public class ListSampleActivity extends AppCompatActivity implements SolidBaseVi
         setContentView(R.layout.activity_list_sample);
   
         Solid.getInstance().register(solidId(), this, new ListDataManager());
-        Solid.getInstance().call(Config.BIND_ID_LIST, Solid.CallType.CALL_TYPE_DATA_TO_VIEW);//根据绑定id手动选择显示哪个数据试图
+        Solid.getInstance().call(solidId(),Config.BIND_ID_LIST,
+                Solid.CallType.CALL_TYPE_DATA_TO_VIEW);//根据绑定id手动选择显示哪个数据试图
     }
 
     private void dialog1(int position) {
@@ -39,7 +40,8 @@ public class ListSampleActivity extends AppCompatActivity implements SolidBaseVi
                 (dialogInterface, i) -> {
                     dialogInterface.dismiss();
                     clickItemPosition = position;
-                    Solid.getInstance().call(Config.BIND_ID_CLICK, Solid.CallType.CALL_TYPE_VIEW_TO_DATA);//view向data传递数据
+                    Solid.getInstance().call(solidId(),Config.BIND_ID_CLICK,
+                            Solid.CallType.CALL_TYPE_VIEW_TO_DATA);//view向data传递数据
                     adapter.notifyDataSetChanged();
                 });
     }

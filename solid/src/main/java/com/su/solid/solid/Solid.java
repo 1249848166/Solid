@@ -1,7 +1,5 @@
 package com.su.solid.solid;
 
-import android.util.Log;
-
 import com.su.solid._abstract.SolidBaseData;
 import com.su.solid._abstract.SolidBaseView;
 import com.su.solid._abstract.SolidObject;
@@ -9,12 +7,14 @@ import com.su.solid.annotation.SolidData;
 import com.su.solid.annotation.SolidDataProvider;
 import com.su.solid.annotation.SolidView;
 import com.su.solid.callback.SolidCallback;
-import com.su.solid.model.SolidBindPeer;
+import com.su.solid.model.BindItemInfo;
+import com.su.solid.model.SolidMatcher;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -37,76 +37,113 @@ public class Solid {
         return Holder.instance;
     }
 
-    private final Map<Integer, SolidBindPeer> peerMap = new HashMap<>();
+    private final Map<Integer, SolidMatcher> matcherMap = new HashMap<>();
 
-    public void register(int id, SolidObject... targets) {
-        for (SolidObject target : targets) {
-            final SolidBindPeer savedPeer = peerMap.get(id);
-            if (savedPeer == null) {
-                SolidBindPeer peer = null;
-                if (target instanceof SolidBaseView) {
-                    peer = new SolidBindPeer(id, (SolidBaseView) target, null);
+    public void register(int solidId, SolidObject... targets) {
+        try {
+            for (SolidObject target : targets) {
+                final SolidMatcher savedMatcher = matcherMap.get(solidId);
+                if (savedMatcher == null) {
+                    SolidMatcher matcher = new SolidMatcher(solidId);
+                    if (target instanceof SolidBaseView) {
+                        attachInfo(matcher, target, SolidView.class);
+                    } else {
+                        attachInfo(matcher, target, SolidData.class);
+                    }
+                    matcherMap.put(solidId, matcher);
                 } else {
-                    peer = new SolidBindPeer(id, null, (SolidBaseData) target);
+                    if (target instanceof SolidBaseView) {
+                        attachInfo(savedMatcher, target, SolidView.class);
+                    } else {
+                        attachInfo(savedMatcher, target, SolidData.class);
+                    }
                 }
-                peerMap.put(id, peer);
-            } else {
-                if (target instanceof SolidBaseView) {
-                    savedPeer.setView((SolidBaseView) target);
-                } else {
-                    savedPeer.setData((SolidBaseData) target);
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    private void attachInfo(SolidMatcher matcher,SolidObject target,Class<?> annotationClass) {
+        final BindItemInfo bindItemInfo=new BindItemInfo(target,annotationClass);
+        final Method[] methods=target.getClass().getDeclaredMethods();
+        for(Method method:methods){
+            final Annotation[] annotations=method.getAnnotations();
+            for(Annotation annotation:annotations){
+                final String annotationName=annotation.annotationType().getName();
+                if(annotationName.equals(annotationClass.getName())){
+                    int bindId;
+                    if(annotationClass.getName().equals(SolidView.class.getName())){
+                        bindId= Objects.requireNonNull(method.getAnnotation(SolidView.class)).bindId();
+                    }else{
+                        bindId= Objects.requireNonNull(method.getAnnotation(SolidData.class)).bindId();
+                    }
+                    bindItemInfo.putMethod(bindId,method);
+                    break;
+                }else if(annotationName.equals(SolidDataProvider.class.getName())){
+                    final SolidDataProvider provider=method.getAnnotation(SolidDataProvider.class);
+                    assert provider != null;
+                    bindItemInfo.putProvider(provider.id(),method);
                 }
             }
         }
+        matcher.addBindItemInfo(bindItemInfo);
     }
 
-    public void unRegister(int id) {
-        peerMap.remove(id);
-    }
-
-    public void call(int bindId, CallType callType) {
-        for (SolidBindPeer peer : peerMap.values()) {
-            final int solidId = peer.getSolidId();
-            final SolidBaseView view = peer.getView();
-            final SolidBaseData data = peer.getData();
-            if (view == null || data == null) continue;
-            bindAPeer(solidId, view, data, bindId, callType);
-        }
-    }
-
-    private void bindAPeer(int solidId, SolidBaseView view, SolidBaseData data, int bindId, CallType callType) {
-        if (view.solidId() != solidId || data.solidId() != solidId) {
-            Log.e(Solid.class.getName(), "请保证数据和试图的solidId一致");
-            return;
-        }
-        final Class<? extends SolidBaseData> clazz = (Class<? extends SolidBaseData>) data.getClass();
-        final Method[] methods = clazz.getDeclaredMethods();
-        final Map<Integer, Method> targetDataMethodMap = handleMethodsWithSolidDataAnnotation(methods);
-        final Class<? extends SolidBaseView> clazz2 = (Class<? extends SolidBaseView>) view.getClass();
-        final Method[] methods2 = clazz2.getDeclaredMethods();
-        final Map<Integer, Method> targetViewMethodMap = handleMethodsWithSolidViewAnnotation(methods2);
-        if (targetDataMethodMap.size() <= 0) return;
-        final Set<Integer> bindIdSet = targetDataMethodMap.keySet();
-        for (int bid : bindIdSet) {
-            if (bid == bindId) {
-                final Method dataMethod = getMethodByBindId(targetDataMethodMap, bid);
-                final Method viewMethod = getMethodByBindId(targetViewMethodMap, bid);
-                if (dataMethod == null || viewMethod == null) continue;
-                bindAViewWithData(dataMethod, viewMethod, data, view, callType);
-                break;
+    public void unRegister(int solidId) {
+        try {
+            final SolidMatcher matcher = matcherMap.get(solidId);
+            assert matcher != null;
+            final List<BindItemInfo> bindItemInfoList = matcher.getBindItemInfoList();
+            for (BindItemInfo info : bindItemInfoList) {
+                info.setObject(null);
+                info.setAnnotationClass(null);
+                info.getMethodMap().clear();
+                info.getProviderMap().clear();
             }
+            bindItemInfoList.clear();
+            matcherMap.remove(solidId);
+        }catch (Exception e){
+            e.printStackTrace();
         }
     }
 
-    private void bindAViewWithData(Method dataMethod, Method viewMethod,
-                                   SolidBaseData solidBaseData, SolidBaseView solidBaseView,
-                                   CallType callType) {
-        dataMethod.setAccessible(true);
-        viewMethod.setAccessible(true);
-        if (callType == CallType.CALL_TYPE_DATA_TO_VIEW) {
-            callDataToView(dataMethod, viewMethod, solidBaseData, solidBaseView);
-        } else {
-            callViewToData(dataMethod, viewMethod, solidBaseData, solidBaseView);
+    public void call(int solidId,int bindId, CallType callType) {
+        try {
+            final SolidMatcher matcher=matcherMap.get(solidId);
+            assert matcher != null;
+            final List<BindItemInfo> bindItemInfoList = (List<BindItemInfo>) matcher.getBindItemInfoList();
+            assert bindItemInfoList != null;
+            Method viewMethod = null, dataMethod = null;
+            SolidObject viewObject = null, dataObject = null;
+            for (BindItemInfo info : bindItemInfoList) {
+                final SolidObject target = info.getObject();
+                final Map<Integer, Method> methodMap = info.getMethodMap();
+                final Set<Integer> keySet = methodMap.keySet();
+                for (Integer bId : keySet) {
+                    if (bId == bindId) {
+                        if (target instanceof SolidBaseView) {
+                            viewMethod = methodMap.get(bId);
+                            viewObject = target;
+                        } else {
+                            dataMethod = methodMap.get(bId);
+                            dataObject = target;
+                        }
+                        break;
+                    }
+                }
+            }
+            if (viewMethod != null && dataMethod != null) {
+                viewMethod.setAccessible(true);
+                dataMethod.setAccessible(true);
+                if (callType == CallType.CALL_TYPE_DATA_TO_VIEW) {
+                    callDataToView(dataMethod, viewMethod, (SolidBaseData) dataObject, (SolidBaseView) viewObject);
+                } else if(callType==CallType.CALL_TYPE_VIEW_TO_DATA){
+                    callViewToData(dataMethod,viewMethod,(SolidBaseData) dataObject, (SolidBaseView) viewObject);
+                }
+            }
+        }catch (Exception e){
+            e.printStackTrace();
         }
     }
 
@@ -178,56 +215,29 @@ public class Solid {
         }
     }
 
-    private Method getMethodByBindId(Map<Integer, Method> methodMap, int bindId) {
-        return methodMap.get(bindId);
-    }
-
-    private Map<Integer, Method> handleMethodsWithSolidDataAnnotation(Method[] methods) {
-        return handleMethodsWithTargetAnnotation(methods, SolidData.class);
-    }
-
-    private Map<Integer, Method> handleMethodsWithSolidViewAnnotation(Method[] methods) {
-        return handleMethodsWithTargetAnnotation(methods, SolidView.class);
-    }
-
-    private Map<Integer, Method> handleMethodsWithTargetAnnotation(Method[] methods, Class<?> target) {
-
-        final Map<Integer, Method> methodMap = new HashMap<>();
-        for (Method method : methods) {
-            final Annotation[] annotations = method.getAnnotations();
-            boolean hasTargetAnnotation = false;
-            int id = -1;
-            for (Annotation annotation : annotations) {
-                if (annotation.annotationType().getName().equals(target.getName())) {
-                    hasTargetAnnotation = true;
-                    if (target.getName().equals(SolidData.class.getName()))
-                        id = Objects.requireNonNull(method.getAnnotation(SolidData.class)).bindId();
-                    else
-                        id = Objects.requireNonNull(method.getAnnotation(SolidView.class)).bindId();
+    public Object queryProviderData(int solidId, int providerId) {
+        Object data=null;
+        try {
+            final SolidMatcher matcher = matcherMap.get(solidId);
+            assert matcher != null;
+            final List<BindItemInfo> bindItemInfoList = matcher.getBindItemInfoList();
+            for (BindItemInfo info : bindItemInfoList) {
+                final SolidObject target = info.getObject();
+                final Map<Integer, Method> providerMap = info.getProviderMap();
+                final Method providerMethod = providerMap.get(providerId);
+                if (providerMethod != null) {
+                    if (target instanceof SolidBaseView) {
+                        data = findIdDataFromView((SolidBaseView) target, providerId);
+                    } else {
+                        data = findIdDataFromData((SolidBaseData) target, providerId);
+                    }
                     break;
                 }
             }
-            if (hasTargetAnnotation) {
-                methodMap.put(id, method);
-            }
+        }catch (Exception e){
+            e.printStackTrace();
         }
-        return methodMap;
-    }
-
-    public Object queryProviderData(int solidId, int providerId) {
-        final SolidBindPeer bindPeer = peerMap.get(solidId);
-        if (bindPeer == null) return null;
-        final SolidBaseView baseView = bindPeer.getView();
-        final SolidBaseData baseData = bindPeer.getData();
-        if (baseView == null || baseData == null) return null;
-        return findIdDataFromObject(baseView, baseData, providerId);
-    }
-
-    private Object findIdDataFromObject(SolidBaseView baseView, SolidBaseData baseData, int providerId) {
-        Object result = findIdDataFromView(baseView, providerId);
-        if (result == null)
-            result=findIdDataFromData(baseData, providerId);
-        return result;
+        return data;
     }
 
     private Object findIdDataFromData(SolidBaseData baseData, int providerId) {

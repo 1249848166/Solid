@@ -24,7 +24,7 @@ public class SimpleSampleActivity extends AppCompatActivity implements SolidBase
         //1.注册view和data，可以分开注册，也可以一起注册
         Solid.getInstance().register(solidId(),this,new SimpleDataManager());
         //2.调用绑定方法，便可以将数据和试图绑定，将数据和试图解耦
-        Solid.getInstance().call(1, Solid.CallType.CALL_TYPE_DATA_TO_VIEW);
+        Solid.getInstance().call(solidId(),1, Solid.CallType.CALL_TYPE_DATA_TO_VIEW);
     }
 
     @SuppressLint("NonConstantResourceId")

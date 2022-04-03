@@ -5,6 +5,9 @@ public class Config {
     //隔离ID
     public static final int SOLID_ID_SIMPLE=0;
     public static final int SOLID_ID_LIST=1;
+    public static final int SOLID_ID_FRAGMENT_MAIN=2;
+    public static final int SOLID_ID_FRAGMENT_FIND=3;
+    public static final int SOLID_ID_FRAGMENT_ME=4;
 
     //绑定ID
     public static final int BIND_ID_SIMPLE=0;
