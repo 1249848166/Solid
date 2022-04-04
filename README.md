@@ -56,7 +56,7 @@ public class MainActivity extends AppCompatActivity implements SolidBaseView {
      * @param msg 消息
      */
     @SuppressWarnings("unchecked")
-    @SolidView(bindId = Config.BIND_ID_LIST_VIEW)
+    @SolidView(bindId = Config.BIND_ID_LIST_VIEW,threadType = ThreadType.MAIN)
     void showList(Object data,String msg){
         if(data==null){
             System.out.println("这里获得的数据是null，考虑我没有在数据端传入，而是想要通过provider获取");
@@ -111,11 +111,9 @@ public class MainActivity extends AppCompatActivity implements SolidBaseView {
      * @param data
      * @param msg
      */
-    @SolidView(bindId = Config.BIND_ID_LIST_REFRESH)
+    @SolidView(bindId = Config.BIND_ID_LIST_REFRESH,threadType = ThreadType.MAIN)
     void noticeRefreshList(Object data,String msg){
-        runOnUiThread(()->{
-            adapter.notifyDataSetChanged();
-        });
+        adapter.notifyDataSetChanged();
     }
 
     @Override
