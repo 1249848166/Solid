@@ -1,5 +1,8 @@
 package com.su.solid.solid;
 
+import android.os.Handler;
+import android.os.Looper;
+
 import com.su.solid._abstract.SolidBaseData;
 import com.su.solid._abstract.SolidBaseView;
 import com.su.solid._abstract.SolidObject;
@@ -9,6 +12,7 @@ import com.su.solid.annotation.SolidView;
 import com.su.solid.callback.SolidCallback;
 import com.su.solid.model.BindItemInfo;
 import com.su.solid.model.SolidMatcher;
+import com.su.solid.thread_type.ThreadType;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
@@ -26,7 +30,10 @@ public class Solid {
         CALL_TYPE_VIEW_TO_DATA
     }
 
+    private final Handler handler;
+
     private Solid() {
+        handler = new Handler(Looper.getMainLooper());
     }
 
     private static final class Holder {
@@ -59,31 +66,31 @@ public class Solid {
                     }
                 }
             }
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private void attachInfo(SolidMatcher matcher,SolidObject target,Class<?> annotationClass) {
-        final BindItemInfo bindItemInfo=new BindItemInfo(target,annotationClass);
-        final Method[] methods=target.getClass().getDeclaredMethods();
-        for(Method method:methods){
-            final Annotation[] annotations=method.getAnnotations();
-            for(Annotation annotation:annotations){
-                final String annotationName=annotation.annotationType().getName();
-                if(annotationName.equals(annotationClass.getName())){
+    private void attachInfo(SolidMatcher matcher, SolidObject target, Class<?> annotationClass) {
+        final BindItemInfo bindItemInfo = new BindItemInfo(target, annotationClass);
+        final Method[] methods = target.getClass().getDeclaredMethods();
+        for (Method method : methods) {
+            final Annotation[] annotations = method.getAnnotations();
+            for (Annotation annotation : annotations) {
+                final String annotationName = annotation.annotationType().getName();
+                if (annotationName.equals(annotationClass.getName())) {
                     int bindId;
-                    if(annotationClass.getName().equals(SolidView.class.getName())){
-                        bindId= Objects.requireNonNull(method.getAnnotation(SolidView.class)).bindId();
-                    }else{
-                        bindId= Objects.requireNonNull(method.getAnnotation(SolidData.class)).bindId();
+                    if (annotationClass.getName().equals(SolidView.class.getName())) {
+                        bindId = Objects.requireNonNull(method.getAnnotation(SolidView.class)).bindId();
+                    } else {
+                        bindId = Objects.requireNonNull(method.getAnnotation(SolidData.class)).bindId();
                     }
-                    bindItemInfo.putMethod(bindId,method);
+                    bindItemInfo.putMethod(bindId, method);
                     break;
-                }else if(annotationName.equals(SolidDataProvider.class.getName())){
-                    final SolidDataProvider provider=method.getAnnotation(SolidDataProvider.class);
+                } else if (annotationName.equals(SolidDataProvider.class.getName())) {
+                    final SolidDataProvider provider = method.getAnnotation(SolidDataProvider.class);
                     assert provider != null;
-                    bindItemInfo.putProvider(provider.id(),method);
+                    bindItemInfo.putProvider(provider.id(), method);
                 }
             }
         }
@@ -103,14 +110,14 @@ public class Solid {
             }
             bindItemInfoList.clear();
             matcherMap.remove(solidId);
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void call(int solidId,int bindId, CallType callType) {
+    public void call(int solidId, int bindId, CallType callType) {
         try {
-            final SolidMatcher matcher=matcherMap.get(solidId);
+            final SolidMatcher matcher = matcherMap.get(solidId);
             assert matcher != null;
             final List<BindItemInfo> bindItemInfoList = (List<BindItemInfo>) matcher.getBindItemInfoList();
             assert bindItemInfoList != null;
@@ -138,11 +145,11 @@ public class Solid {
                 dataMethod.setAccessible(true);
                 if (callType == CallType.CALL_TYPE_DATA_TO_VIEW) {
                     callDataToView(dataMethod, viewMethod, (SolidBaseData) dataObject, (SolidBaseView) viewObject);
-                } else if(callType==CallType.CALL_TYPE_VIEW_TO_DATA){
-                    callViewToData(dataMethod,viewMethod,(SolidBaseData) dataObject, (SolidBaseView) viewObject);
+                } else if (callType == CallType.CALL_TYPE_VIEW_TO_DATA) {
+                    callViewToData(dataMethod, viewMethod, (SolidBaseData) dataObject, (SolidBaseView) viewObject);
                 }
             }
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -152,24 +159,12 @@ public class Solid {
         final SolidCallback callback = new SolidCallback() {
             @Override
             public void onDataGet(Object data) {
-                try {
-                    dataMethod.invoke(solidBaseData, data, null);
-                } catch (IllegalAccessException e) {
-                    e.printStackTrace();
-                } catch (InvocationTargetException e) {
-                    e.printStackTrace();
-                }
+                callViewToDataInnerMethod(data, null, dataMethod, solidBaseData);
             }
 
             @Override
             public void onMessageGet(String msg) {
-                try {
-                    dataMethod.invoke(solidBaseData, null, msg);
-                } catch (IllegalAccessException e) {
-                    e.printStackTrace();
-                } catch (InvocationTargetException e) {
-                    e.printStackTrace();
-                }
+                callViewToDataInnerMethod(null, msg, dataMethod, solidBaseData);
             }
         };
         try {
@@ -181,29 +176,34 @@ public class Solid {
         }
     }
 
+    private void callViewToDataInnerMethod(Object data, String msg, Method dataMethod, SolidBaseData solidBaseData) {
+        try {
+            dataMethod.invoke(solidBaseData, data, msg);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void callDataToView(Method dataMethod, Method viewMethod,
                                 SolidBaseData solidBaseData, SolidBaseView solidBaseView) {
+        final ThreadType threadType = Objects.requireNonNull(viewMethod.getAnnotation(SolidView.class)).threadType();
         final SolidCallback callback = new SolidCallback() {
             @Override
             public void onDataGet(Object data) {
-                try {
-                    viewMethod.invoke(solidBaseView, data, null);
-                } catch (IllegalAccessException e) {
-                    e.printStackTrace();
-                } catch (InvocationTargetException e) {
-                    e.printStackTrace();
-                }
+                if (threadType == ThreadType.MAIN)
+                    handler.post(() -> callDataToViewInnerMethod(data, null, viewMethod, solidBaseView));
+                else
+                    callDataToViewInnerMethod(data, null, viewMethod, solidBaseView);
             }
 
             @Override
             public void onMessageGet(String msg) {
-                try {
-                    viewMethod.invoke(solidBaseView, null, msg);
-                } catch (IllegalAccessException e) {
-                    e.printStackTrace();
-                } catch (InvocationTargetException e) {
-                    e.printStackTrace();
-                }
+                if (threadType == ThreadType.MAIN)
+                    handler.post(() -> callDataToViewInnerMethod(null, msg, viewMethod, solidBaseView));
+                else
+                    callDataToViewInnerMethod(null, msg, viewMethod, solidBaseView);
             }
         };
         try {
@@ -215,8 +215,18 @@ public class Solid {
         }
     }
 
+    private void callDataToViewInnerMethod(Object data, String msg, Method viewMethod, SolidBaseView solidBaseView) {
+        try {
+            viewMethod.invoke(solidBaseView, data, msg);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        }
+    }
+
     public Object queryProviderData(int solidId, int providerId) {
-        Object data=null;
+        Object data = null;
         try {
             final SolidMatcher matcher = matcherMap.get(solidId);
             assert matcher != null;
@@ -234,7 +244,7 @@ public class Solid {
                     break;
                 }
             }
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return data;

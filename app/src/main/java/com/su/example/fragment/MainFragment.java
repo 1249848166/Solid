@@ -1,6 +1,5 @@
 package com.su.example.fragment;
 
-import android.content.DialogInterface;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -20,10 +19,10 @@ import com.su.example.data.MainFragmentDataManager2;
 import com.su.example.dialog.DialogHelper;
 import com.su.example.model.list.ListSolidItem;
 import com.su.solid._abstract.SolidBaseView;
-import com.su.solid.annotation.SolidData;
 import com.su.solid.annotation.SolidView;
 import com.su.solid.callback.SolidCallback;
 import com.su.solid.solid.Solid;
+import com.su.solid.thread_type.ThreadType;
 
 import java.util.List;
 
@@ -67,9 +66,9 @@ public class MainFragment extends Fragment implements SolidBaseView {
         return contentView;
     }
 
-    @SolidView(bindId = Config.BIND_ID_LIST)
+    @SolidView(bindId = Config.BIND_ID_LIST,threadType = ThreadType.MAIN)
     void onGetListItems(Object data, String msg) {
-        requireActivity().runOnUiThread(() -> adapter.notifyDataSetChanged());
+        adapter.notifyDataSetChanged();
     }
 
     @SolidView(bindId = Config.BIND_ID_CLICK)
@@ -77,9 +76,9 @@ public class MainFragment extends Fragment implements SolidBaseView {
         callback.onDataGet(clickPosition);
     }
 
-    @SolidView(bindId = Config.BIND_ID_REFRESH)
+    @SolidView(bindId = Config.BIND_ID_REFRESH,threadType = ThreadType.MAIN)
     void onRefreshList(Object data,String msg){
-        requireActivity().runOnUiThread(() -> adapter.notifyDataSetChanged());
+        adapter.notifyDataSetChanged();
     }
 
     @Override
