@@ -22,7 +22,7 @@ allprojects {
 
 dependencies {
 
-	  implementation 'com.github.1249848166:Solid:1.0.0'
+	  implementation 'com.github.1249848166:Solid:1.1.0'
 		
 }
   
@@ -47,7 +47,7 @@ public class MainActivity extends AppCompatActivity implements SolidBaseView {
         //调用注册，完成View和Data的绑定
         Solid.getInstance().register(solidId(),this,new MainActivityData());
         //刚进入界面，调用显示列表事件,类型是数据从data端传向view端
-        Solid.getInstance().call(Config.BIND_ID_LIST_VIEW, Solid.CallType.CALL_TYPE_DATA_TO_VIEW);
+        Solid.getInstance().call(solidId(),Config.BIND_ID_LIST_VIEW, Solid.CallType.CALL_TYPE_DATA_TO_VIEW);
     }
 
     /**
@@ -89,7 +89,7 @@ public class MainActivity extends AppCompatActivity implements SolidBaseView {
                             dialogInterface.dismiss();
                             clickPosition=position;
                             //点击了确认之后，就向data传递数据，并指定是从view传向data的类型
-                            Solid.getInstance().call(Config.BIND_ID_ITEM_REMOVE,
+                            Solid.getInstance().call(solidId(),Config.BIND_ID_ITEM_REMOVE,
                                     Solid.CallType.CALL_TYPE_VIEW_TO_DATA);
                         })
                         .show();
@@ -171,7 +171,7 @@ public class MainActivityData implements SolidBaseData {
     void listItemDataRemove(Object data,String msg){
         testItems.remove((int)data);
         //删除之后，提醒view更新显示
-        Solid.getInstance().call(Config.BIND_ID_LIST_REFRESH,
+        Solid.getInstance().call(solidId(),Config.BIND_ID_LIST_REFRESH,
                 Solid.CallType.CALL_TYPE_DATA_TO_VIEW);
     }
 
