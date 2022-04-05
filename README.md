@@ -22,7 +22,7 @@ allprojects {
 
 dependencies {
 
-	  implementation 'com.github.1249848166:Solid:1.2.0'
+	  implementation 'com.github.1249848166:Solid:1.3.0'
 		
 }
   
@@ -45,7 +45,12 @@ public class MainActivity extends AppCompatActivity implements SolidBaseView {
         recycler=findViewById(R.id.recycler);
 
         //调用注册，完成View和Data的绑定
-        Solid.getInstance().register(solidId(),this,new MainActivityData());
+        Solid.getInstance()
+	            //可以进行一对多绑定
+                    .addDataManager(new MainFragmentDataManager1())
+                    .addDataManager(new MainFragmentDataManager2())
+                    //最后将当前view注册进去
+                    .register(this);
         //刚进入界面，调用显示列表事件,类型是数据从data端传向view端
         Solid.getInstance().call(solidId(),Config.BIND_ID_LIST_VIEW, Solid.CallType.CALL_TYPE_DATA_TO_VIEW);
     }
@@ -248,6 +253,49 @@ List<String> testListData(){
 	
 Solid.getInstance().queryProviderData(solidId(),Config.PROVIDER_ID_LIST_VIEW_DATA);
 	
+
+##### 3.替代call方法的可选方案（考虑到call方法需要提供两个模板方法，有些情况下可能不方便）
+
+加入观察者模式，可以通过数据改变监听，修改视图显示。反过来，可以监听视图变化，反过来修改数据（详情请看examle项目）
+	
+先注册observer监听者
+	
+ //使用数据监听情况下可以不需要register
+Solid.getInstance().addDataManager(new FindFragmentDataManager());
+	
+//设置observer的消费者
+final ListItemObserver listItemObserver=new ListItemObserver();
+	
+listItemObserver.setConsumer(this);
+	
+Solid.getInstance().addObserver(Config.SERVICE_ID_LIST,listItemObserver);
+	
+紧接着，在数据或者视图改变的地方调用observable来消费事件
+	
+final ListItemObservable observable=new ListItemObservable();
+	
+observable.setDataSource(dataSource);
+	
+Solid.getInstance().service(Config.SERVICE_ID_LIST,observable);
+	
 #### 5.更多使用，还在开发中
 
 如果你有什么疑问或者建议，欢迎联系qq：1249848166
+	
+#### 6.更新日志
+	
+##### v1.0.0
+	
+完成简单的双向数据导通
+	
+##### v1.1.0
+	
+添加provider提供数据，并且在优化方法
+	
+##### v1.2.0
+	
+加入线程调度
+	
+##### v1.3.0
+
+简化方法，提高细粒度，并且添加观察者模式，作为call方法的可选替换
