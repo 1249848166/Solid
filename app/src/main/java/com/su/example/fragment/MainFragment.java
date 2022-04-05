@@ -40,8 +40,12 @@ public class MainFragment extends Fragment implements SolidBaseView {
         View contentView = null;
         try {
 
-            Solid.getInstance().register(solidId(), this,
-                    new MainFragmentDataManager1(), new MainFragmentDataManager2());//可以进行多对多绑定
+            Solid.getInstance()
+                    //可以进行一对多绑定
+                    .addDataManager(new MainFragmentDataManager1())
+                    .addDataManager(new MainFragmentDataManager2())
+                    //最后将当前view注册进去
+                    .register(this);
             Solid.getInstance().call(solidId(), Config.BIND_ID_LIST, Solid.CallType.CALL_TYPE_DATA_TO_VIEW);
 
             contentView = inflater.inflate(R.layout.fragment_main, container, false);

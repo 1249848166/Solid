@@ -1,5 +1,5 @@
 package com.su.example.model.list;
 
-public interface ListSolidItem {
+public interface ListSolidItem{
     int getType();
 }

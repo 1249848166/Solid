@@ -1,4 +1,4 @@
-package com.su.example.model;
+package com.su.example.model.simple;
 
 public class SimpleTextSolidData{
     private String text;

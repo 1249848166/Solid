@@ -1,5 +1,6 @@
 package com.su.example.adapter;
 
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -41,7 +42,7 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.VH> implements
 
     @Override
     public int getItemViewType(int position) {
-        return ((ListSolidItem)listSolidItems.get(position)).getType();
+        return listSolidItems.get(position).getType();
     }
 
     @NonNull

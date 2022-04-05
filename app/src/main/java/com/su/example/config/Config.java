@@ -18,4 +18,8 @@ public class Config {
     //数据ID
     public static final int PROVIDER_ID_LIST=0;
     public static final int PROVIDER_ID_CLICK=1;
+
+    //服务id
+    public static final int SERVICE_ID_LIST=0;
+    public static final int SERVICE_ID_REMOVE=1;
 }

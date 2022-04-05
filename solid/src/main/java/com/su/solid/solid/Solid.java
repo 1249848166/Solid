@@ -2,6 +2,7 @@ package com.su.solid.solid;
 
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
 import com.su.solid._abstract.SolidBaseData;
 import com.su.solid._abstract.SolidBaseView;
@@ -12,6 +13,8 @@ import com.su.solid.annotation.SolidView;
 import com.su.solid.callback.SolidCallback;
 import com.su.solid.model.BindItemInfo;
 import com.su.solid.model.SolidMatcher;
+import com.su.solid.service.interf.Observable;
+import com.su.solid.service.interf.Observer;
 import com.su.solid.thread_type.ThreadType;
 
 import java.lang.annotation.Annotation;
@@ -44,26 +47,56 @@ public class Solid {
         return Holder.instance;
     }
 
+    private final Map<Integer, Observer> observers = new HashMap<>();
+
+    public <T> Solid addObserver(Integer solidId, Observer<T> observer) {
+        observers.put(solidId, observer);
+        return this;
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> void service(Integer serviceId,Observable<T> observable) {
+        try {
+            if (observable != null)
+                handler.post(() -> {
+                    try {
+                        observable.notice(observers.get(serviceId));
+                    }catch (Exception e){
+                        e.printStackTrace();
+                    }
+                });
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
     private final Map<Integer, SolidMatcher> matcherMap = new HashMap<>();
 
-    public void register(int solidId, SolidObject... targets) {
+    public Solid addDataManager(SolidBaseData dataManager) {
+        attach(dataManager);
+        return this;
+    }
+
+    public void register(SolidBaseView baseView) {
+        attach(baseView);
+    }
+
+    public void attach(SolidObject target) {
         try {
-            for (SolidObject target : targets) {
-                final SolidMatcher savedMatcher = matcherMap.get(solidId);
-                if (savedMatcher == null) {
-                    SolidMatcher matcher = new SolidMatcher(solidId);
-                    if (target instanceof SolidBaseView) {
-                        attachInfo(matcher, target, SolidView.class);
-                    } else {
-                        attachInfo(matcher, target, SolidData.class);
-                    }
-                    matcherMap.put(solidId, matcher);
+            final SolidMatcher savedMatcher = matcherMap.get(target.solidId());
+            if (savedMatcher == null) {
+                SolidMatcher matcher = new SolidMatcher(target.solidId());
+                if (target instanceof SolidBaseView) {
+                    attachInfo(matcher, target, SolidView.class);
                 } else {
-                    if (target instanceof SolidBaseView) {
-                        attachInfo(savedMatcher, target, SolidView.class);
-                    } else {
-                        attachInfo(savedMatcher, target, SolidData.class);
-                    }
+                    attachInfo(matcher, target, SolidData.class);
+                }
+                matcherMap.put(target.solidId(), matcher);
+            } else {
+                if (target instanceof SolidBaseView) {
+                    attachInfo(savedMatcher, target, SolidView.class);
+                } else {
+                    attachInfo(savedMatcher, target, SolidData.class);
                 }
             }
         } catch (Exception e) {
@@ -97,8 +130,12 @@ public class Solid {
         matcher.addBindItemInfo(bindItemInfo);
     }
 
-    public void unRegister(int solidId) {
+    @SuppressWarnings("unchecked")
+    public <T> void unRegister(int solidId) {
         try {
+            if(observers.get(solidId)!=null)
+                Objects.requireNonNull(observers.get(solidId)).setConsumer(null);
+            observers.remove(solidId);
             final SolidMatcher matcher = matcherMap.get(solidId);
             assert matcher != null;
             final List<BindItemInfo> bindItemInfoList = matcher.getBindItemInfoList();

@@ -8,7 +8,7 @@ import android.widget.TextView;
 
 import com.su.example.R;
 import com.su.example.data.SimpleDataManager;
-import com.su.example.model.SimpleTextSolidData;
+import com.su.example.model.simple.SimpleTextSolidData;
 import com.su.solid._abstract.SolidBaseView;
 import com.su.solid.annotation.SolidView;
 import com.su.solid.solid.Solid;
@@ -22,7 +22,9 @@ public class SimpleSampleActivity extends AppCompatActivity implements SolidBase
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         //1.注册view和data，可以分开注册，也可以一起注册
-        Solid.getInstance().register(solidId(),this,new SimpleDataManager());
+        Solid.getInstance()
+                .addDataManager(new SimpleDataManager())
+                .register(this);
         //2.调用绑定方法，便可以将数据和试图绑定，将数据和试图解耦
         Solid.getInstance().call(solidId(),1, Solid.CallType.CALL_TYPE_DATA_TO_VIEW);
     }

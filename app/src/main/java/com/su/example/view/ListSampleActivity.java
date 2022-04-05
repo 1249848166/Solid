@@ -30,7 +30,9 @@ public class ListSampleActivity extends AppCompatActivity implements SolidBaseVi
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_list_sample);
   
-        Solid.getInstance().register(solidId(), this, new ListDataManager());
+        Solid.getInstance()
+                .addDataManager(new ListDataManager())
+                .register(this);
         Solid.getInstance().call(solidId(),Config.BIND_ID_LIST,
                 Solid.CallType.CALL_TYPE_DATA_TO_VIEW);//根据绑定id手动选择显示哪个数据试图
     }

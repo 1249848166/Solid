@@ -1,6 +1,6 @@
 package com.su.example.data;
 
-import com.su.example.model.SimpleTextSolidData;
+import com.su.example.model.simple.SimpleTextSolidData;
 import com.su.solid._abstract.SolidBaseData;
 import com.su.solid.annotation.SolidData;
 import com.su.solid.callback.SolidCallback;
