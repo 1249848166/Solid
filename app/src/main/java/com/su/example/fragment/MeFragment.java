@@ -60,7 +60,7 @@ public class MeFragment extends Fragment {
     private void getData(OnDataCallback callback){
         items.clear();
         new Thread(() -> {
-            SystemClock.sleep(1000);
+//            SystemClock.sleep(1000);
             items.add(new ListSolidItem1("测试","这个页面显示不使用solid，会怎么用"));
             items.add(new ListSolidItem1("测试","模拟从网络获取数据"));
             callback.onGet();
@@ -70,4 +70,5 @@ public class MeFragment extends Fragment {
     private interface OnDataCallback{
         void onGet();
     }
+
 }

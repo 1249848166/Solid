@@ -2,7 +2,6 @@ package com.su.solid.solid;
 
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 
 import com.su.solid._abstract.SolidBaseData;
 import com.su.solid._abstract.SolidBaseView;
@@ -11,7 +10,9 @@ import com.su.solid.annotation.SolidData;
 import com.su.solid.annotation.SolidDataProvider;
 import com.su.solid.annotation.SolidView;
 import com.su.solid.callback.SolidCallback;
+import com.su.solid.compare.Compare;
 import com.su.solid.model.BindItemInfo;
+import com.su.solid.model.ObserverModel;
 import com.su.solid.model.SolidMatcher;
 import com.su.solid.service.interf.Observable;
 import com.su.solid.service.interf.Observer;
@@ -20,6 +21,7 @@ import com.su.solid.thread_type.ThreadType;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,11 +49,10 @@ public class Solid {
         return Holder.instance;
     }
 
-    private final Map<Integer, Observer> observers = new HashMap<>();
+    private final List<ObserverModel> observers = new ArrayList<>();
 
-    public <T> Solid addObserver(Integer solidId, Observer<T> observer) {
-        observers.put(solidId, observer);
-        return this;
+    public <T> void addObserver(Integer solidId,Integer serviceId, Observer<T> observer) {
+        observers.add(new ObserverModel(solidId,serviceId,observer));
     }
 
     @SuppressWarnings("unchecked")
@@ -60,7 +61,8 @@ public class Solid {
             if (observable != null)
                 handler.post(() -> {
                     try {
-                        observable.notice(observers.get(serviceId));
+                        observable.notice(getObserver(observers, serviceId,
+                                (observerModel, serviceId1) -> observerModel.getServiceId()== serviceId1));
                     }catch (Exception e){
                         e.printStackTrace();
                     }
@@ -68,6 +70,15 @@ public class Solid {
         }catch (Exception e){
             e.printStackTrace();
         }
+    }
+
+    private Observer getObserver(List<ObserverModel> observers,Integer serviceId,
+                                 Compare<ObserverModel,Integer> equalCompare){
+        for(ObserverModel model:observers){
+            if(equalCompare.compare(model,serviceId))
+                return model.getObserver();
+        }
+        return null;
     }
 
     private final Map<Integer, SolidMatcher> matcherMap = new HashMap<>();
@@ -130,12 +141,9 @@ public class Solid {
         matcher.addBindItemInfo(bindItemInfo);
     }
 
-    @SuppressWarnings("unchecked")
-    public <T> void unRegister(int solidId) {
+    public void unRegister(int solidId) {
         try {
-            if(observers.get(solidId)!=null)
-                Objects.requireNonNull(observers.get(solidId)).setConsumer(null);
-            observers.remove(solidId);
+            removeObserver(solidId);
             final SolidMatcher matcher = matcherMap.get(solidId);
             assert matcher != null;
             final List<BindItemInfo> bindItemInfoList = matcher.getBindItemInfoList();
@@ -152,11 +160,30 @@ public class Solid {
         }
     }
 
+    private void removeObserver(Integer solidId){
+        final List<ObserverModel> models=getObserverModels(observers,solidId,
+                (observerModel, solidId1) -> observerModel.getSolidId()== solidId1);
+        for(ObserverModel model:models) {
+            model.setObserver(null);
+            observers.remove(model);
+        }
+    }
+
+    private List<ObserverModel> getObserverModels(List<ObserverModel> observers,Integer solidId,
+                                           Compare<ObserverModel,Integer> equalCompare){
+        final List<ObserverModel> collects=new ArrayList<>();
+        for(ObserverModel model:observers){
+            if(equalCompare.compare(model,solidId))
+                collects.add(model);
+        }
+        return collects;
+    }
+
     public void call(int solidId, int bindId, CallType callType) {
         try {
             final SolidMatcher matcher = matcherMap.get(solidId);
             assert matcher != null;
-            final List<BindItemInfo> bindItemInfoList = (List<BindItemInfo>) matcher.getBindItemInfoList();
+            final List<BindItemInfo> bindItemInfoList = matcher.getBindItemInfoList();
             assert bindItemInfoList != null;
             Method viewMethod = null, dataMethod = null;
             SolidObject viewObject = null, dataObject = null;

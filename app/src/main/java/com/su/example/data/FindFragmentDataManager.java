@@ -22,19 +22,19 @@ public class FindFragmentDataManager implements SolidBaseData {
         //创建并注册observer
         final ListItemRemoveObserver observer=new ListItemRemoveObserver();
         observer.setConsumer(null);
-        Solid.getInstance().addObserver(Config.SERVICE_ID_REMOVE,observer);
+        Solid.getInstance().addObserver(solidId(),Config.SERVICE_ID_REMOVE,observer);
         //获取数据
         getItems();
     }
 
     private void getItems() {
         new Thread(() -> {
-            SystemClock.sleep(3000);
+//            SystemClock.sleep(3000);
             dataSource.clear();
             dataSource.add(new ListSolidItem1("测试数据监听","动态更改view显示"));
             dataSource.add(new ListSolidItem1("测试数据监听","动态更改view显示"));
             dataSource.add(new ListSolidItem1("测试数据监听","动态更改view显示"));
-            //创建并注册observer
+            //创建observable并消费
             final ListItemObservable observable=new ListItemObservable();
             observable.setDataSource(dataSource);
             Solid.getInstance().service(Config.SERVICE_ID_LIST,observable);

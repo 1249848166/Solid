@@ -1,8 +1,6 @@
 package com.su.example.fragment;
 
-import android.app.slice.Slice;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,7 +17,6 @@ import com.su.example.config.Config;
 import com.su.example.data.FindFragmentDataManager;
 import com.su.example.dialog.DialogHelper;
 import com.su.example.model.list.ListSolidItem;
-import com.su.example.model.list.ListSolidItem1;
 import com.su.example.service.ListItemObserver;
 import com.su.example.service.ListItemRemoveObservable;
 import com.su.solid._abstract.SolidBaseView;
@@ -51,7 +48,7 @@ public class FindFragment extends Fragment implements SolidBaseView {
             //设置observer的消费者
             final ListItemObserver listItemObserver=new ListItemObserver();
             listItemObserver.setConsumer(this);
-            Solid.getInstance().addObserver(Config.SERVICE_ID_LIST,listItemObserver);
+            Solid.getInstance().addObserver(solidId(),Config.SERVICE_ID_LIST,listItemObserver);
 
             adapter.setOnItemSelectListener(position -> {
                 DialogHelper.showSimpleDialog(getContext(), "提示", "是否删除item",
@@ -86,5 +83,11 @@ public class FindFragment extends Fragment implements SolidBaseView {
     @Override
     public int solidId() {
         return Config.SOLID_ID_FRAGMENT_FIND;
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        Solid.getInstance().unRegister(solidId());
     }
 }

@@ -1,5 +1,6 @@
 package com.su.example.fragment;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,6 +19,7 @@ import com.su.example.data.MainFragmentDataManager1;
 import com.su.example.data.MainFragmentDataManager2;
 import com.su.example.dialog.DialogHelper;
 import com.su.example.model.list.ListSolidItem;
+import com.su.example.view.ListSampleActivity;
 import com.su.solid._abstract.SolidBaseView;
 import com.su.solid.annotation.SolidView;
 import com.su.solid.callback.SolidCallback;
@@ -54,13 +56,14 @@ public class MainFragment extends Fragment implements SolidBaseView {
             adapter = new ListAdapter((List<ListSolidItem>) Solid.getInstance()
                     .queryProviderData(solidId(), Config.PROVIDER_ID_LIST));
             adapter.setOnItemSelectListener(position -> {
-                DialogHelper.showSimpleDialog(getContext(), "提示", "是否删除item",
-                        (dialogInterface, i) -> {
-                            dialogInterface.dismiss();
-                            clickPosition = position;
-                            Solid.getInstance().call(solidId(), Config.BIND_ID_CLICK,
-                                    Solid.CallType.CALL_TYPE_VIEW_TO_DATA);
-                        });
+//                DialogHelper.showSimpleDialog(getContext(), "提示", "是否删除item",
+//                        (dialogInterface, i) -> {
+//                            dialogInterface.dismiss();
+//                            clickPosition = position;
+//                            Solid.getInstance().call(solidId(), Config.BIND_ID_CLICK,
+//                                    Solid.CallType.CALL_TYPE_VIEW_TO_DATA);
+//                        });
+                requireContext().startActivity(new Intent(requireContext(),ListSampleActivity.class));
             });
             recycler.setAdapter(adapter);
             adapter.notifyDataSetChanged();
@@ -88,5 +91,11 @@ public class MainFragment extends Fragment implements SolidBaseView {
     @Override
     public int solidId() {
         return Config.SOLID_ID_FRAGMENT_MAIN;
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        Solid.getInstance().unRegister(solidId());
     }
 }

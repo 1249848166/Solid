@@ -23,7 +23,7 @@ public class FragmentPagerActivity extends AppCompatActivity {
     private ViewPager pager;
 
     private FragmentPagerAdapter adapter;
-    private final List<Fragment> fragments=new ArrayList<>();
+    private final List<Class<? extends Fragment>> fragments=new ArrayList<>();
 
     private final String[] tabStrings=new String[]{"首页","发现","我的"};
 
@@ -42,11 +42,12 @@ public class FragmentPagerActivity extends AppCompatActivity {
                 tabLayout.addTab(tab);
             }
 
-            fragments.add(new MainFragment());
-            fragments.add(new FindFragment());
-            fragments.add(new MeFragment());
+            fragments.add(MainFragment.class);
+            fragments.add(FindFragment.class);
+            fragments.add(MeFragment.class);
             adapter = new FragmentPagerAdapter(getSupportFragmentManager(), fragments);
             pager.setAdapter(adapter);
+            pager.setOffscreenPageLimit(3);
             pager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
                 @Override
                 public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
