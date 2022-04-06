@@ -22,7 +22,7 @@ allprojects {
 
 dependencies {
 
-	  implementation 'com.github.1249848166:Solid:1.3.0'
+	  implementation 'com.github.1249848166:Solid:1.3.1'
 		
 }
   
