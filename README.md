@@ -299,3 +299,7 @@ Solid.getInstance().service(Config.SERVICE_ID_LIST,observable);
 ##### v1.3.0
 
 简化方法，提高细粒度，并且添加观察者模式，作为call方法的可选替换
+	
+##### v1.3.1
+	
+修改框架中不合理的地方，并且解决demo中存在内存泄漏的问题（viewpager+fragment的泄露）
